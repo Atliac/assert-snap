@@ -1,5 +1,5 @@
 [package]
-name = "atliac-crate-template"
+name = "assert-snap"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

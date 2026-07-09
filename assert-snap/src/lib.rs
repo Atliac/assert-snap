@@ -1,13 +1,11 @@
-//! # atliac-crate-template
+//! # assert-snap
 //!
-//! A minimal, production-ready Rust template designed to jumpstart library (crate) development.
-//! It establishes a workspace-friendly structure and comes pre-configured with automated release
-//! pipelines, versioning, and cross-platform distribution.
+//! A snapshot testing and assertion library for Rust.
 //!
 //! ## Example
 //!
 //! ```rust
-//! use atliac_crate_template::add;
+//! use assert_snap::add;
 //!
 //! assert_eq!(add(2, 3), 5);
 //! ```
@@ -19,7 +17,7 @@
 /// # Examples
 ///
 /// ```rust
-/// use atliac_crate_template::add;
+/// use assert_snap::add;
 ///
 /// let result = add(2, 2);
 /// assert_eq!(result, 4);

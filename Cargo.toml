@@ -3,16 +3,16 @@ version = "0.0.2"
 edition = "2024"
 license = "MIT OR Apache-2.0"
 authors = ["Atliac"]
-description = "A minimal Rust crate template for kickstarting library development"
-repository = "https://github.com/atliac/crate-template"
-documentation = "https://docs.rs/atliac-crate-template"
-homepage = "https://github.com/atliac/crate-template"
+description = "Snapshot testing and assertion library for Rust"
+repository = "https://github.com/atliac/assert-snap"
+documentation = "https://docs.rs/assert-snap"
+homepage = "https://github.com/atliac/assert-snap"
 readme = "README.md"
-keywords = ["template"]
-categories = ["development-tools"]
+keywords = ["snapshot", "testing", "assert", "snap"]
+categories = ["development-tools::testing"]
 
 [workspace]
 resolver = "3"
-members = ["crate-template"]
+members = ["assert-snap"]
 
 [workspace.dependencies]

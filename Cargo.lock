@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "atliac-crate-template"
+name = "assert-snap"
 version = "0.0.2"
