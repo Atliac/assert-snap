@@ -1,0 +1,22 @@
+# https://release-plz.dev/docs/config
+[workspace]
+
+# Automatically update the changelog with the new version and release notes
+changelog_update = true
+
+# update dependencies with `cargo update`
+dependencies_update = false
+
+# release-plz will create a GitHub Release when it publishes a new version.
+git_release_enable = true
+
+# Labels to apply to the release pull request opened by release-plz
+pr_labels = ["release"]
+
+# Don't publish to crates.io by default.
+publish = false
+
+# package-specific settings. These override the workspace settings above.
+[[package]]
+name = "atliac-crate-template"
+publish = true

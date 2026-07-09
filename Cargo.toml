@@ -1,0 +1,18 @@
+[workspace.package]
+version = "0.0.2"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+authors = ["Atliac"]
+description = "A minimal Rust crate template for kickstarting library development"
+repository = "https://github.com/atliac/crate-template"
+documentation = "https://docs.rs/atliac-crate-template"
+homepage = "https://github.com/atliac/crate-template"
+readme = "README.md"
+keywords = ["template"]
+categories = ["development-tools"]
+
+[workspace]
+resolver = "3"
+members = ["crate-template"]
+
+[workspace.dependencies]
