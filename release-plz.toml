@@ -18,5 +18,5 @@ publish = false
 
 # package-specific settings. These override the workspace settings above.
 [[package]]
-name = "atliac-crate-template"
+name = "assert-snap"
 publish = true

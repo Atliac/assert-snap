@@ -1,6 +1,6 @@
-# Contributing to crate-template
+# Contributing to assert-snap
 
-Thank you for considering contributing to crate-template!
+Thank you for considering contributing to assert-snap!
 
 ## Issues
 Before reporting an issue, please check existing or similar issues that are currently tracked.
@@ -13,7 +13,7 @@ Contributions are always encouraged and welcome. Before creating a pull request,
 
 PRs should be small and focused and should avoid interacting with multiple facets of the codebase. This may require a larger PR to be split into two or more smaller PRs.
 
-Unless the PR is for something minor (i.e., a typo), please ensure that an issue has been opened for the feature or work you would like to contribute beforehand. By opening an issue, a discussion can be held beforehand on scoping the work effectively and ensuring that the work is in line with the vision for crate-template. Without any linked issues, your PR may be liable to be closed if we (the maintainers) do not feel that your PR is within scope for the project.
+Unless the PR is for something minor (i.e., a typo), please ensure that an issue has been opened for the feature or work you would like to contribute beforehand. By opening an issue, a discussion can be held beforehand on scoping the work effectively and ensuring that the work is in line with the vision for assert-snap. Without any linked issues, your PR may be liable to be closed if we (the maintainers) do not feel that your PR is within scope for the project.
 
 It is also highly suggested to comment on issues you are interested in working on. By doing so, it allows others to see that something is being worked on and therefore avoids frustrating situations, such as multiple contributors opening a PR for the same issue. In such a case, any duplicate PRs will be closed unless it is clear that the original contributor is unable to continue the work.
 
@@ -32,8 +32,8 @@ This will then auto-link issue 999 (for example) and will automatically close th
 This should be similar to most Rust projects.
 
 ```bash
-git clone https://github.com/Atliac/crate-template
-cd crate-template
+git clone https://github.com/Atliac/assert-snap
+cd assert-snap
 cargo test
 ```
 
