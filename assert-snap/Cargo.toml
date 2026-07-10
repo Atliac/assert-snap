@@ -13,3 +13,5 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+blake3 = "1.8.5"
+regex = "1.13.0"
