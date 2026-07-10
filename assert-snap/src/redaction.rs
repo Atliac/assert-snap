@@ -2,20 +2,25 @@ use std::borrow::Cow;
 
 use regex::Regex;
 
-/// A rule describing a single redaction to apply to a snapshot string.
-///
-/// - `pattern` is a regular expression to search for.
-/// - `limit` is the maximum number of matches to replace (`0` replaces all).
-/// - `replacement` is the text to substitute in place of each match.
+/// A rule specifying how to redact data matching a specific pattern.
 pub(crate) struct RedactionRule<'a> {
+    /// The regular expression pattern to match.
     pub(crate) pattern: &'a str,
+    /// The maximum number of replacements to make. If `0`, all occurrences are replaced.
     pub(crate) limit: usize,
+    /// The replacement template (supports capture groups like `$1`).
     pub(crate) replacement: &'a str,
 }
 
-/// Applies `redaction_rules` sequentially to `data`, returning the redacted
-/// result. Borrows `data` when no rules modify it; otherwise owns the modified
-/// string.
+/// Applies a series of redaction rules to the input string sequentially.
+///
+/// Each rule defines a regular expression pattern, a replacement template (which supports
+/// capture groups like `$1`), and a limit on the number of matches to replace. If the limit
+/// is `0`, all occurrences matching the pattern are replaced.
+///
+/// # Panics
+///
+/// Panics if any of the regular expression patterns in the rules are invalid.
 #[track_caller]
 pub(crate) fn apply_redactions<'a>(
     data: &'a str,
@@ -40,4 +45,94 @@ pub(crate) fn apply_redactions<'a>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_apply_redactions_empty_rules() {
+        let data = "hello world";
+        let rules = [];
+        let result = apply_redactions(data, &rules);
+        assert_eq!(result, "hello world");
+        assert!(matches!(result, Cow::Borrowed(_)));
+    }
+
+    #[test]
+    fn test_apply_redactions_no_match() {
+        let data = "hello world";
+        let rules = [RedactionRule {
+            pattern: "foo",
+            limit: 0,
+            replacement: "bar",
+        }];
+        let result = apply_redactions(data, &rules);
+        assert_eq!(result, "hello world");
+        assert!(matches!(result, Cow::Borrowed(_)));
+    }
+
+    #[test]
+    fn test_apply_redactions_single_replacement() {
+        let data = "hello world hello";
+        let rules = [RedactionRule {
+            pattern: "hello",
+            limit: 1,
+            replacement: "hi",
+        }];
+        let result = apply_redactions(data, &rules);
+        assert_eq!(result, "hi world hello");
+        assert!(matches!(result, Cow::Owned(_)));
+    }
+
+    #[test]
+    fn test_apply_redactions_limit_zero_replaces_all() {
+        let data = "hello world hello";
+        let rules = [RedactionRule {
+            pattern: "hello",
+            limit: 0,
+            replacement: "hi",
+        }];
+        let result = apply_redactions(data, &rules);
+        assert_eq!(result, "hi world hi");
+    }
+
+    #[test]
+    fn test_apply_redactions_multiple_rules() {
+        let data = "hello world";
+        let rules = [
+            RedactionRule {
+                pattern: "hello",
+                limit: 1,
+                replacement: "hi",
+            },
+            RedactionRule {
+                pattern: "world",
+                limit: 1,
+                replacement: "earth",
+            },
+        ];
+        let result = apply_redactions(data, &rules);
+        assert_eq!(result, "hi earth");
+    }
+
+    #[test]
+    fn test_apply_redactions_capture_groups() {
+        let data = "hello world";
+        let rules = [RedactionRule {
+            pattern: r"hello (\w+)",
+            limit: 0,
+            replacement: "hi $1",
+        }];
+        let result = apply_redactions(data, &rules);
+        assert_eq!(result, "hi world");
+    }
+
+    #[test]
+    #[should_panic(expected = "regex parse error")]
+    fn test_apply_redactions_invalid_regex() {
+        let data = "hello world";
+        let rules = [RedactionRule {
+            pattern: "(invalid",
+            limit: 0,
+            replacement: "hi",
+        }];
+        let _result = apply_redactions(data, &rules);
+    }
 }
