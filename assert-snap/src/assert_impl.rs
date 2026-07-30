@@ -6,6 +6,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use similar::TextDiff;
+
 use crate::redaction::{RedactionRule, apply_redactions};
 
 /// The name of the folder where snapshots will be stored.
@@ -19,40 +21,58 @@ pub(crate) fn assert_snap<'a>(
     real_value: &str,
     redaction_rules: &[RedactionRule],
 ) {
-    println!("Assertion ID: {}", assertion_id);
     let snap_file_path = get_snap_file_path(assertion_id, source_file_path);
-    println!("Snap file: {}", snap_file_path.display());
-    println!("===== REAL VALUE =====");
-    println!("{real_value}");
-    let redacted_value = apply_redactions(real_value, redaction_rules);
-    if matches!(redacted_value, Cow::Owned(_)) {
-        println!("===== REDACTED VALUE =====");
-        println!("{redacted_value}");
+
+    // DIFF needs a newline at the end of the content
+    let mut real_value: Cow<str> = Cow::from(real_value);
+    if !real_value.ends_with("\n") {
+        real_value.to_mut().push('\n');
     }
 
+    println!("===== REAL VALUE =====");
+    println!("{real_value}");
+    let real_value = apply_redactions(real_value.as_ref(), redaction_rules);
+    if matches!(real_value, Cow::Owned(_)) {
+        println!("===== REDACTED VALUE =====");
+        println!("{real_value}");
+    }
+
+    println!("Snapshot file: {}", snap_file_path.display());
     let env_key_id = format!("{}_{}", SNAP_ENV_PREFIX, assertion_id);
     let env_key_all = format!("{}_ALL", SNAP_ENV_PREFIX);
     if should_update_snapshot(&env_key_id) || should_update_snapshot(&env_key_all) {
-        update_snapshot(&snap_file_path, &redacted_value);
+        update_snapshot(&snap_file_path, &real_value);
         println!("Snapshot updated.");
         println!("===== ASSERTION PASSED =====");
         return;
     }
 
     if !exists(&snap_file_path).expect("Failed to check if snapshot file exists") {
-        println!("\nWarning: snapshot file doesn't exist.");
+        println!("Warning: snapshot file doesn't exist.");
         handle_assertion_failure(&env_key_id);
     }
 
     let expected_value = read_to_string(&snap_file_path).expect("Failed to read snapshot file");
-    if expected_value == redacted_value {
+    if expected_value == real_value {
         println!("===== ASSERTION PASSED =====");
         return;
     }
 
     println!("===== EXPECTED VALUE =====");
     println!("{expected_value}");
+    show_diff(&real_value, &expected_value);
     handle_assertion_failure(&env_key_id);
+}
+
+#[track_caller]
+fn show_diff(real_value: &str, expected_value: &str) {
+    println!("===== DIFF =====");
+    let diff = TextDiff::from_lines(expected_value, real_value);
+    println!(
+        "{}",
+        diff.unified_diff()
+            .header("EXPECTED VALUE", "REAL/REDACTED VALUE")
+    );
 }
 
 #[track_caller]
@@ -69,11 +89,11 @@ fn should_update_snapshot(env_key: &str) -> bool {
 }
 
 #[track_caller]
-fn update_snapshot(snap_file_path: &Path, value: &str) -> bool {
+fn update_snapshot(snap_file_path: &Path, value: &str) {
     if let Some(parent) = snap_file_path.parent() {
         std::fs::create_dir_all(parent).unwrap();
     }
-    write(snap_file_path, value).is_ok()
+    write(snap_file_path, value).unwrap()
 }
 
 #[track_caller]
