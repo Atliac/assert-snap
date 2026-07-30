@@ -1,15 +1,39 @@
 mod assert_impl;
 mod redaction;
 
-// #[macro_export]
-// macro_rules! assert_snap {
-//     ($real_value:expr,$($t:tt)*) => {
-//         assert_snap_impl!("assert_snap", &format!("{real_value}"), $($t)*);
-//     };
-//     ($real_value:expr) => {
-//         assert_snap_impl!("assert_snap", &format!("{real_value}"),);
-//     };
-// }
+#[macro_export]
+macro_rules! assert_snap {
+    ($real_value:expr,$($t:tt)*) => {
+        let assertion_id=get_assertion_id!("assert_snap",$($t)*);
+        assert_snap_impl!(&assertion_id,$real_value,$($t)*);
+    };
+    ($real_value:expr) => {
+        //assert_snap_impl!("assert_snap", &format!("{real_value}"));
+    };
+}
+
+macro_rules! get_assertion_id {
+    ($($t:tt)+) => {{
+        let mut source=String::new();
+        source.push_str(file!());
+        source.push('\n');
+        source.push_str(module_path!());
+        source.push('\n');
+        $(
+            source.push_str(stringify!($t));
+        )+
+
+        let assertion_id=blake3::hash(source.as_bytes())
+        .to_string();
+
+        if(dev_debug_enabled())
+        {
+            println!("Assertion id {} generated from:",assertion_id);
+            println!("{source}\n");
+        }
+        assertion_id
+    }};
+}
 
 // #[macro_export]
 // macro_rules! assert_debug_snap {
@@ -68,8 +92,6 @@ macro_rules! assert_snap_impl {
         // &str
         $assertion_id:expr,
         // &str
-        $source_file_path:expr,
-        // &str
         $real_value:expr,
         // Rules token stream
         $($rules:tt)+
@@ -81,7 +103,7 @@ macro_rules! assert_snap_impl {
 
         assert_impl::assert_snap(
             $assertion_id,
-            $source_file_path,
+            file!(),
             $real_value,
             &redaction_rules,
         );
@@ -92,17 +114,26 @@ macro_rules! assert_snap_impl {
         // &str
         $assertion_id:expr,
         // &str
-        $source_file_path:expr,
-        // &str
         $real_value:expr
     ) => {
         assert_impl::assert_snap(
             $assertion_id,
-            $source_file_path,
+            $file!(),
             $real_value,
             Default::default(),
         );
     };
+}
+
+pub(crate) fn dev_debug_enabled() -> bool {
+    const TRUE_VALUES: &[&str] = &["yes", "true", "1", "y", "on"];
+    if let Ok(v) = std::env::var("ASSERT_SNAP_DEV_DEBUG")
+        && TRUE_VALUES.contains(&v.to_lowercase().as_str())
+    {
+        true
+    } else {
+        false
+    }
 }
 
 #[cfg(test)]
@@ -111,17 +142,6 @@ mod tests {
 
     #[test]
     fn test_assert_snap_impl() {
-        // With limits
-        assert_snap_impl!("1", file!(), "Hello World!", [1]"o"=>"#", "xx"=>"**");
+        assert_snap!("Hello World", [1]"o"=>"#", "xx"=>"**");
     }
-}
-
-fn get_assertion_id(
-    assertion_method: &str,
-    source_file_path: &str,
-    real_value: &str,
-    rules: &str,
-) -> String {
-    blake3::hash(format!("{assertion_method},{source_file_path},{real_value},{rules}").as_bytes())
-        .to_string()
 }
