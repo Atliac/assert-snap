@@ -6,8 +6,6 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use similar::TextDiff;
-
 use crate::redaction::{RedactionRule, apply_redactions};
 
 /// The name of the folder where snapshots will be stored.
@@ -60,12 +58,16 @@ pub(crate) fn assert_snap<'a>(
 
     println!("===== EXPECTED VALUE =====");
     println!("{expected_value}");
+    #[cfg(feature = "diff")]
     show_diff(&real_value, &expected_value);
     handle_assertion_failure(&env_key_id);
 }
 
+#[cfg(feature = "diff")]
 #[track_caller]
 fn show_diff(real_value: &str, expected_value: &str) {
+    use similar::TextDiff;
+
     println!("===== DIFF =====");
     let diff = TextDiff::from_lines(expected_value, real_value);
     println!(
