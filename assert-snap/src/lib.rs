@@ -3,15 +3,18 @@ pub mod redaction;
 
 #[macro_export]
 macro_rules! assert_snap {
-        // ($real_value:expr,$($t:tt)*) => {
-    //     assert_snap!(&assertion_id,$real_value,$($t)*);
-    // };
     ($actual:expr, $expected:expr) => {
         let actual = format!("{}", $actual);
         let expected = format!("{}", $expected);
         $crate::assert_snap!(@assert_str, &actual, &expected);
     };
-    // Main arm with rules
+
+    ($actual:expr, $expected:expr,$($tail:tt)+) => {
+        let actual = format!("{}", $actual);
+        let expected = format!("{}", $expected);
+        $crate::assert_snap!(@assert_str, &actual, &expected, $($tail)+);
+    };
+
     (
         @assert_str,
         // &str
@@ -33,7 +36,6 @@ macro_rules! assert_snap {
         );
     };
 
-    // Main arm without rules
     (
         @assert_str,
         // &str
@@ -89,15 +91,20 @@ macro_rules! assert_snap {
     };
 }
 
-// #[macro_export]
-// macro_rules! assert_debug_snap {
-//     ($real_value:expr,$($t:tt)*) => {
-//         assert_snap!("assert_snap", &format!("{real_value:#?}"), $($t)*);
-//     };
-//     ($real_value:expr) => {
-//         assert_snap!("assert_snap", &format!("{real_value:#?}"),);
-//     };
-// }
+#[macro_export]
+macro_rules! assert_debug_snap {
+    ($actual:expr, $expected:expr) => {
+        let actual = format!("{:#?}", $actual);
+        let expected = format!("{:#?}", $expected);
+        $crate::assert_snap!(@assert_str, &actual, &expected);
+    };
+
+    ($actual:expr, $expected:expr,$($tail:tt)+) => {
+        let actual = format!("{:#?}", $actual);
+        let expected = format!("{:#?}", $expected);
+        $crate::assert_snap!(@assert_str, &actual, &expected, $($tail)+);
+    };
+}
 
 #[cfg(test)]
 mod tests {
@@ -105,13 +112,12 @@ mod tests {
 
     #[test]
     fn test_assert_snap_no_rules() {
-        assert_snap!(@assert_str, "Hello World!", "Hello World!");
+        assert_snap!("Hello World!", "Hello World!");
     }
 
     #[test]
     fn test_assert_snap() {
-        // Test with redaction rules - replace "secret" with "****"
-        assert_snap!(@assert_str,
+        assert_snap!(
             "User password is secret123",
             "User password is ****123",
             "secret" => "****"
@@ -120,8 +126,7 @@ mod tests {
 
     #[test]
     fn test_assert_snap_with_limit() {
-        // Test with limit - only replace first occurrence
-        assert_snap!(@assert_str,
+        assert_snap!(
             "secret and secret",
             "**** and secret",
             [1] "secret" => "****"
@@ -130,8 +135,7 @@ mod tests {
 
     #[test]
     fn test_assert_snap_multiple_rules() {
-        // Test with multiple redaction rules
-        assert_snap!(@assert_str,
+        assert_snap!(
             "api_key=abc123 password=xyz789",
             "api_key=**** password=****",
             r"api_key=.+\s" => "api_key=**** ",
