@@ -69,7 +69,7 @@ pub(crate) fn apply_redactions<'a>(
         replacement,
     } in redaction_rules
     {
-        let regex = Regex::new(pattern).unwrap();
+        let regex = Regex::new(pattern).expect("regex parse error in redaction rule");
         let redacted = regex.replacen(&result, *limit, *replacement);
         if let Cow::Owned(modified) = redacted {
             result = Cow::from(modified);
