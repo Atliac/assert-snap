@@ -21,10 +21,10 @@ use crate::redaction::{RedactionRule, apply_redactions};
 /// is enabled, a unified diff is printed showing the differences.
 ///
 #[track_caller]
-pub fn assert_snap<'a>(actual: &str, expected: &str, redaction_rules: &[RedactionRule]) {
+pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRule]) {
     println!("===== ACTUAL VALUE =====");
     println!("{actual}\n");
-    let actual = apply_redactions(actual.as_ref(), redaction_rules);
+    let actual = apply_redactions(actual, redaction_rules);
     if matches!(actual, Cow::Owned(_)) {
         println!("===== REDACTED VALUE =====");
         println!("{actual}\n");
@@ -34,7 +34,7 @@ pub fn assert_snap<'a>(actual: &str, expected: &str, redaction_rules: &[Redactio
         println!("===== EXPECTED VALUE =====");
         println!("{expected}\n");
         #[cfg(feature = "diff")]
-        show_diff(&actual, &expected);
+        show_diff(&actual, expected);
         panic!("===== ASSERTION Failed =====");
     }
     println!("===== ASSERTION PASSED =====");
