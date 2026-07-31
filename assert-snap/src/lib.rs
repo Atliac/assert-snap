@@ -27,7 +27,10 @@ macro_rules! assert_snap {
         use redaction::*;
 
         let mut redaction_rules = Vec::new();
-        assert_snap!(@munch redaction_rules ; $($rules)+);
+        #[allow(clippy::vec_init_then_push)]
+        {
+            assert_snap!(@munch redaction_rules ; $($rules)+);
+        }
 
         $crate::assert_impl::assert_snap(
             $actual,
@@ -107,6 +110,7 @@ macro_rules! assert_debug_snap {
 }
 
 #[cfg(test)]
+#[allow(dead_code)]
 mod tests {
     use super::*;
 
@@ -291,11 +295,11 @@ mod tests {
 
     #[test]
     fn test_assert_debug_snap_map() {
-        use std::collections::HashMap;
-        let mut map = HashMap::new();
+        use std::collections::BTreeMap;
+        let mut map = BTreeMap::new();
         map.insert("key1", "value1");
         map.insert("key2", "secret");
-        let mut expected = HashMap::new();
+        let mut expected = BTreeMap::new();
         expected.insert("key1", "value1");
         expected.insert("key2", "****");
         assert_debug_snap!(
