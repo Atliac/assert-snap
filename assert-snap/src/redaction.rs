@@ -1,15 +1,30 @@
+//! Redaction module for masking dynamic or sensitive text using regular expressions.
+//!
+//! This module defines [`RedactionRule`], which encapsulates regex pattern matching, replacement rules,
+//! and match limits, as well as internal helpers for applying transformations sequentially.
+
 use std::borrow::Cow;
 
 use regex::Regex;
 
-/// A rule specifying how to redact data matching a specific pattern.
+/// A rule specifying how to redact data matching a specific regular expression pattern.
+///
+/// Rules consist of a regex pattern, a replacement string (supporting regex capture groups such as `$1`),
+/// and a maximum replacement limit.
+///
+/// # Examples
+///
+/// ```rust
+/// use assert_snap::redaction::RedactionRule;
+/// let rule = RedactionRule::new(r"token_\w+", "[REDACTED]", 1);
+/// ```
 pub struct RedactionRule<'a> {
     /// The regular expression pattern to match.
-    pub(crate) pattern: &'a str,
+    pub pattern: &'a str,
     /// The maximum number of replacements to make. If `0`, all occurrences are replaced.
-    pub(crate) limit: usize,
-    /// The replacement template (supports capture groups like `$1`).
-    pub(crate) replacement: &'a str,
+    pub limit: usize,
+    /// The replacement template (supports regex capture groups like `$1`).
+    pub replacement: &'a str,
 }
 
 impl<'a> RedactionRule<'a> {
@@ -23,7 +38,7 @@ impl<'a> RedactionRule<'a> {
     ///
     /// # Returns
     ///
-    /// A new `RedactionRule` instance.
+    /// A new [`RedactionRule`] instance.
     pub fn new(pattern: &'a str, replacement: &'a str, limit: usize) -> Self {
         Self {
             pattern,
@@ -32,6 +47,7 @@ impl<'a> RedactionRule<'a> {
         }
     }
 }
+
 /// Applies a series of redaction rules to the input string sequentially.
 ///
 /// Each rule defines a regular expression pattern, a replacement template (which supports
@@ -40,7 +56,7 @@ impl<'a> RedactionRule<'a> {
 ///
 /// # Panics
 ///
-/// Panics if any of the regular expression patterns in the rules are invalid.
+/// Panics if any of the regular expression patterns in the rules are invalid regex.
 #[track_caller]
 pub(crate) fn apply_redactions<'a>(
     data: &'a str,

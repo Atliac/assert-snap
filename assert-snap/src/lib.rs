@@ -1,6 +1,81 @@
+//! # `assert-snap`
+//!
+//! A snapshot testing and assertion library for Rust that supports flexible, regex-based dynamic data redactions and detailed unified diff output.
+//!
+//! ## Main Macros
+//!
+//! - [`assert_snap!`]: Asserts any types implementing [`Display`](std::fmt::Display).
+//! - [`assert_debug_snap!`]: Asserts any types implementing [`Debug`](std::fmt::Debug).
+//!
+//! ## Quick Example
+//!
+//! ```rust
+//! use assert_snap::{assert_snap, assert_debug_snap};
+//!
+//! // Simple string assertion with regex redaction
+//! assert_snap!(
+//!     "User id: 12345, status: active",
+//!     "User id: [ID], status: active",
+//!     r"\d+" => "[ID]"
+//! );
+//!
+//! // Debug format assertion
+//! assert_debug_snap!(Some("secret"), Some("secret"));
+//! ```
+
 pub mod assert_impl;
 pub mod redaction;
 
+/// Asserts any types implementing [`Display`](std::fmt::Display).
+///
+/// # Syntax
+///
+/// ```rust,ignore
+/// assert_snap!(actual, expected);
+/// assert_snap!(actual, expected, "pattern" => "replacement");
+/// assert_snap!(actual, expected, [limit] "pattern" => "replacement");
+/// assert_snap!(actual, expected, rule1, rule2, ...);
+/// ```
+///
+/// # Parameters
+///
+/// - `$actual`: An expression implementing [`Display`](std::fmt::Display) or convertible via `format!("{actual}")`.
+/// - `$expected`: An expression implementing [`Display`](std::fmt::Display) or convertible via `format!("{expected}")`.
+/// - `[limit] pattern => replacement`: Optional redaction rules to scrub dynamic data (e.g. timestamps, UUIDs) before comparison.
+///   - `limit` (optional): `[n]` limits replacement to the first `n` matches. If omitted or `[0]`, all matches are replaced.
+///   - `pattern`: A regex pattern string.
+///   - `replacement`: Replacement string or regex group reference (e.g. `"$1"`).
+///
+/// # Examples
+///
+/// Basic comparison:
+/// ```rust
+/// use assert_snap::assert_snap;
+///
+/// assert_snap!("hello world", "hello world");
+/// ```
+///
+/// Comparison with redaction rules:
+/// ```rust
+/// use assert_snap::assert_snap;
+///
+/// assert_snap!(
+///     "User id is 12345",
+///     "User id is [ID]",
+///     r"\d+" => "[ID]"
+/// );
+/// ```
+///
+/// Comparison with redaction rules with match limits:
+/// ```rust
+/// use assert_snap::assert_snap;
+///
+/// assert_snap!(
+///     "secret and secret",
+///     "**** and secret",
+///     [1] "secret" => "****"
+/// );
+/// ```
 #[macro_export]
 macro_rules! assert_snap {
     ($actual:expr, $expected:expr) => {
@@ -24,12 +99,10 @@ macro_rules! assert_snap {
         // Rules token stream
         $($rules:tt)+
     ) => {
-        use redaction::*;
-
         let mut redaction_rules = Vec::new();
         #[allow(clippy::vec_init_then_push)]
         {
-            assert_snap!(@munch redaction_rules ; $($rules)+);
+            $crate::assert_snap!(@munch redaction_rules ; $($rules)+);
         }
 
         $crate::assert_impl::assert_snap(
@@ -57,17 +130,17 @@ macro_rules! assert_snap {
 
     // Rule WITH limit (followed by a comma and more rules)
     (@munch $vec:ident; [$limit:expr] $pattern:expr => $replacement:expr , $($rest:tt)*) => {
-        $vec.push(RedactionRule {
+        $vec.push($crate::redaction::RedactionRule {
             pattern: $pattern,
             limit: $limit,
             replacement: $replacement,
         });
-        assert_snap!(@munch $vec; $($rest)*);
+        $crate::assert_snap!(@munch $vec; $($rest)*);
     };
 
     // Rule WITH limit (last rule)
     (@munch $vec:ident; [$limit:expr] $pattern:expr => $replacement:expr) => {
-        $vec.push(RedactionRule {
+        $vec.push($crate::redaction::RedactionRule {
             pattern: $pattern,
             limit: $limit,
             replacement: $replacement,
@@ -76,17 +149,17 @@ macro_rules! assert_snap {
 
     // Rule WITHOUT limit (followed by a comma and more rules)
     (@munch $vec:ident; $pattern:expr => $replacement:expr , $($rest:tt)*) => {
-        $vec.push(RedactionRule {
+        $vec.push($crate::redaction::RedactionRule {
             pattern: $pattern,
             limit: 0,
             replacement: $replacement,
         });
-        assert_snap!(@munch $vec; $($rest)*);
+        $crate::assert_snap!(@munch $vec; $($rest)*);
     };
 
     // Rule WITHOUT limit (last rule)
     (@munch $vec:ident; $pattern:expr => $replacement:expr) => {
-        $vec.push(RedactionRule {
+        $vec.push($crate::redaction::RedactionRule {
             pattern: $pattern,
             limit: 0,
             replacement: $replacement,
@@ -94,6 +167,48 @@ macro_rules! assert_snap {
     };
 }
 
+/// Asserts any types implementing [`Debug`](std::fmt::Debug).
+///
+/// The macro formats `actual` and `expected` using `{:#?}` pretty-printing prior to comparison.
+///
+/// # Syntax
+///
+/// ```rust,ignore
+/// assert_debug_snap!(actual, expected);
+/// assert_debug_snap!(actual, expected, "pattern" => "replacement");
+/// assert_debug_snap!(actual, expected, [limit] "pattern" => "replacement");
+/// assert_debug_snap!(actual, expected, rule1, rule2, ...);
+/// ```
+///
+/// # Examples
+///
+/// Basic debug assertion:
+/// ```rust
+/// use assert_snap::assert_debug_snap;
+///
+/// assert_debug_snap!(Some(42), Some(42));
+/// ```
+///
+/// Debug assertion with redaction rules:
+/// ```rust
+/// use assert_snap::assert_debug_snap;
+///
+/// #[derive(Debug)]
+/// struct User {
+///     name: String,
+///     token: String,
+/// }
+///
+/// let user = User { name: "Alice".into(), token: "secret_123".into() };
+/// assert_debug_snap!(
+///     user,
+///     User {
+///         name: "Alice".to_string(),
+///         token: "****".to_string(),
+///     },
+///     "secret_123" => "****"
+/// );
+/// ```
 #[macro_export]
 macro_rules! assert_debug_snap {
     ($actual:expr, $expected:expr) => {
@@ -112,7 +227,6 @@ macro_rules! assert_debug_snap {
 #[cfg(test)]
 #[allow(dead_code)]
 mod tests {
-    use super::*;
 
     // ===== assert_snap tests =====
 

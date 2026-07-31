@@ -1,3 +1,5 @@
+//! Implementation module containing core assertion comparison and unified diff display logic.
+
 use std::borrow::Cow;
 
 use crate::redaction::{RedactionRule, apply_redactions};
@@ -40,6 +42,9 @@ pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRul
     println!("===== ASSERTION PASSED =====");
 }
 
+/// Displays a unified diff between the expected snapshot string and the actual/redacted output.
+///
+/// Enabled when the `diff` feature flag is active.
 #[cfg(feature = "diff")]
 #[track_caller]
 fn show_diff(actual: &str, expected: &str) {
@@ -54,6 +59,7 @@ fn show_diff(actual: &str, expected: &str) {
             .missing_newline_hint(false)
     );
 }
+
 
 #[cfg(test)]
 mod tests {

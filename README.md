@@ -1,45 +1,149 @@
-# 📦 Crate Template
+# 📸 assert-snap
 
-[![Crates.io](https://img.shields.io/crates/v/atliac-crate-template)](https://crates.io/crates/atliac-crate-template)
-[![Documentation](https://docs.rs/atliac-crate-template/badge.svg)](https://docs.rs/atliac-crate-template)
+[![Crates.io](https://img.shields.io/crates/v/assert-snap)](https://crates.io/crates/assert-snap)
+[![Documentation](https://docs.rs/assert-snap/badge.svg)](https://docs.rs/assert-snap)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE-MIT)
-![Development: Active](https://img.shields.io/badge/Development-Active-blue)
+![Maintenance: Active](https://img.shields.io/badge/Maintenance-Active-blue)
 
-A minimal, production-ready Rust template designed to jumpstart library (crate) development. It establishes a workspace-friendly structure and comes pre-configured with automated release pipelines, versioning, and cross-platform distribution.
+A snapshot testing and assertion library for Rust that supports flexible, regex-based dynamic data redactions and detailed unified diff output.
 
-## 🚀 How to Use
+---
 
-### Developing
+## ✨ Features
 
-1. Add a new package: `cargo new --lib <package-name>`
-2. Work on the library: `cargo build` / `cargo test`
+- 🎯 **`assert_snap!`**: Assert any types implementing `Display`.
+- 🔍 **`assert_debug_snap!`**: Assert any types implementing `Debug`.
+- 🛡️ **Regex Redactions**: Inline rules to scrub volatile data (timestamps, UUIDs, secret tokens, memory addresses) before checking assertions.
+- 📊 **Unified Diff**: Built-in diff printing powered by `similar` on assertion failures (enabled via the `diff` feature, default ON).
 
-### CI Configuration
+---
 
-The project includes a GitHub Actions workflow for continuous integration. To modify the platforms used for testing (Clippy, tests, and documentation), edit `.github/workflows/ci.yml` and update the `supported_os` list:
+## 🚀 Quickstart
 
-```yaml
-matrix:
-  os: &supported_os [ubuntu-latest, macos-latest, windows-latest]
+### Basic String Assertion (`assert_snap!`)
+
+```rust
+use assert_snap::assert_snap;
+
+let actual_output = "User connected successfully";
+let expected_snapshot = "User connected successfully";
+
+assert_snap!(actual_output, expected_snapshot);
 ```
 
-### Publishing
+### Debug Assertion (`assert_debug_snap!`)
 
-This project uses `release-plz` to automate updating [CHANGELOG.md](CHANGELOG.md), bumping versions, tagging Git commits, and publishing to [crates.io](https://crates.io).
+```rust
+use assert_snap::assert_debug_snap;
 
-Steps to enable `release-plz`:
+#[derive(Debug)]
+struct User {
+    id: u64,
+    name: String,
+}
 
-1. **Allow PR Creation**: Navigate to `https://github.com/<user>/<repo>/settings/actions`. Under the **Workflow permissions** section, check the box for **"Allow GitHub Actions to create and approve pull requests"**.
-2. **Configure PAT**: Navigate to `https://github.com/<user>/<repo>/settings/secrets/actions` and add a repository secret named `RELEASE_PLZ_TOKEN`.
-    * This must be a GitHub Personal Access Token (PAT).
-    * If using a **Fine-grained PAT**, grant **`Contents: Read and write`** (to push Git tags) and **`Pull Requests: Read and write`** (to open release PRs) permissions.
-    * If using a **Classic PAT**, select the **`repo`** scope.
-3. **Enable `release-plz` for Your Repository**: Update `if: github.repository == 'Atliac/crate-template'` to `if: github.repository == '<your-username>/<your-repo>'` in `.github/workflows/release-plz.yml`.
-4. Publishing to `crates.io`**:
-    1. **Enable in Config**: Edit [release-plz.toml](release-plz.toml) and remove the `publish = false` lines (or set them to `true`).
-    2. **First Publish**: Run `cargo publish` manually from your local machine once. (Crates.io does not allow publishing a brand-new crate via automation).
-    3. **Trusted Publishing**: Follow the [crates.io Trusted Publishing guide](https://crates.io/docs/trusted-publishing) to link your GitHub repository.
+let user = User { id: 42, name: "Alice".into() };
+
+assert_debug_snap!(
+    user,
+    User {
+        id: 42,
+        name: "Alice".to_string(),
+    }
+);
+```
+
+---
+
+## 🛡️ Redacting Dynamic Data
+
+Dynamic values like generated IDs, secret keys, or timestamps can cause snapshot test instability. `assert-snap` allows appending redaction rules directly inside the macro invocation.
+
+### Basic Redaction Syntax
+
+Format: `"regex_pattern" => "replacement"` (redacts all matches)
+
+```rust
+use assert_snap::assert_snap;
+
+let actual = "Response time: 142ms, status: 200";
+let expected = "Response time: [DURATION], status: 200";
+
+assert_snap!(
+    actual,
+    expected,
+    r"\d+ms" => "[DURATION]"
+);
+```
+
+### Redactions with Limits
+
+Format: `[limit] "regex_pattern" => "replacement"`
+
+By default (or with `[0]`), all matches are redacted. Specifying a limit (e.g., `[1]`) restricts redaction to that maximum number of matches:
+
+```rust
+use assert_snap::assert_snap;
+
+let actual = "token: secret_abc, session: secret_xyz";
+let expected = "token: ****, session: secret_xyz";
+
+assert_snap!(
+    actual,
+    expected,
+    [1] "secret_[a-z]+" => "****"
+);
+```
+
+### Multiple Redaction Rules
+
+You can combine multiple redaction rules separated by commas:
+
+```rust
+use assert_snap::assert_debug_snap;
+
+#[derive(Debug)]
+struct Session {
+    id: String,
+    token: String,
+    active: bool,
+}
+
+let session = Session {
+    id: "sess-98765".into(),
+    token: "Bearer secret-token-123".into(),
+    active: true,
+};
+
+assert_debug_snap!(
+    session,
+    Session {
+        id: "sess-****".to_string(),
+        token: "Bearer ****".to_string(),
+        active: true,
+    },
+    r"sess-\d+" => "sess-****",
+    r"Bearer .+" => "Bearer ****"
+);
+```
+
+---
+
+## ⚙️ Cargo Features
+
+| Feature | Default | Description |
+| :--- | :--- | :--- |
+| `diff` | **Enabled** | Prints a unified diff using the `similar` crate when an assertion fails. |
+
+To disable default features (such as `diff` to minimize dependencies):
+
+```toml
+[dependencies]
+assert-snap = { version = "0.0.0", default-features = false }
+```
+
+---
 
 ## 📜 License
 
