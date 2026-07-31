@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use regex::Regex;
 
 /// A rule specifying how to redact data matching a specific pattern.
-pub(crate) struct RedactionRule<'a> {
+pub struct RedactionRule<'a> {
     /// The regular expression pattern to match.
     pub(crate) pattern: &'a str,
     /// The maximum number of replacements to make. If `0`, all occurrences are replaced.
@@ -12,6 +12,26 @@ pub(crate) struct RedactionRule<'a> {
     pub(crate) replacement: &'a str,
 }
 
+impl<'a> RedactionRule<'a> {
+    /// Creates a new redaction rule.
+    ///
+    /// # Arguments
+    ///
+    /// * `pattern` - The regular expression pattern to match against the input data.
+    /// * `replacement` - The replacement template. Supports capture group references like `$1`, `$2`, etc.
+    /// * `limit` - The maximum number of replacements to make. If `0`, all occurrences are replaced.
+    ///
+    /// # Returns
+    ///
+    /// A new `RedactionRule` instance.
+    pub fn new(pattern: &'a str, replacement: &'a str, limit: usize) -> Self {
+        Self {
+            pattern,
+            limit,
+            replacement,
+        }
+    }
+}
 /// Applies a series of redaction rules to the input string sequentially.
 ///
 /// Each rule defines a regular expression pattern, a replacement template (which supports
