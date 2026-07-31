@@ -60,7 +60,6 @@ fn show_diff(actual: &str, expected: &str) {
     );
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
