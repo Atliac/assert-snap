@@ -12,7 +12,7 @@ jobs:
     name: Release-plz release
     runs-on: ubuntu-latest
     # To avoid release-plz failing in forks
-    if: &repo_check github.repository == 'Atliac/crate-template'
+    if: &repo_check github.repository == 'Atliac/assert-snap'
     permissions:
       contents: write
       pull-requests: read
