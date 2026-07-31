@@ -110,13 +110,15 @@ macro_rules! assert_debug_snap {
 mod tests {
     use super::*;
 
+    // ===== assert_snap tests =====
+
     #[test]
-    fn test_assert_snap_no_rules() {
+    fn test_assert_snap_no_redaction() {
         assert_snap!("Hello World!", "Hello World!");
     }
 
     #[test]
-    fn test_assert_snap() {
+    fn test_assert_snap_basic_redaction() {
         assert_snap!(
             "User password is secret123",
             "User password is ****123",
@@ -140,6 +142,176 @@ mod tests {
             "api_key=**** password=****",
             r"api_key=.+\s" => "api_key=**** ",
             [1] r"password=.+" => "password=****"
+        );
+    }
+
+    #[test]
+    fn test_assert_snap_regex_special_chars() {
+        assert_snap!(
+            "price=$100.50",
+            "price=****",
+            r"\$\d+\.\d+" => "****"
+        );
+    }
+
+    #[test]
+    fn test_assert_snap_no_match() {
+        assert_snap!(
+            "nothing to hide here",
+            "nothing to hide here",
+            "secret" => "****"
+        );
+    }
+
+    #[test]
+    fn test_assert_snap_limit_zero_means_unlimited() {
+        assert_snap!(
+            "secret secret secret",
+            "**** **** ****",
+            [0] "secret" => "****"
+        );
+    }
+
+    #[test]
+    fn test_assert_snap_format_args() {
+        let name = "Alice";
+        let age = 30;
+        assert_snap!(
+            format!("User: {}, Age: {}", name, age),
+            "User: Alice, Age: 30"
+        );
+    }
+
+    // ===== assert_debug_snap tests =====
+
+    #[test]
+    fn test_assert_debug_snap_basic() {
+        assert_debug_snap!(42, 42);
+    }
+
+    #[test]
+    fn test_assert_debug_snap_struct() {
+        #[derive(Debug)]
+        struct Point {
+            x: i32,
+            y: i32,
+        }
+        assert_debug_snap!(Point { x: 1, y: 2 }, Point { x: 1, y: 2 });
+    }
+
+    #[test]
+    fn test_assert_debug_snap_vec() {
+        assert_debug_snap!(vec![1, 2, 3], vec![1, 2, 3]);
+    }
+
+    #[test]
+    fn test_assert_debug_snap_option() {
+        assert_debug_snap!(Some("value"), Some("value"));
+        assert_debug_snap!(None::<String>, None::<String>);
+    }
+
+    #[test]
+    fn test_assert_debug_snap_enum() {
+        #[derive(Debug, PartialEq)]
+        enum Color {
+            Red,
+            Green,
+            Blue,
+        }
+        assert_debug_snap!(Color::Red, Color::Red);
+        assert_debug_snap!(Color::Blue, Color::Blue);
+    }
+
+    #[test]
+    fn test_assert_debug_snap_with_redaction() {
+        assert_debug_snap!(
+            "User { name: \"Alice\", password: \"secret123\" }",
+            "User { name: \"Alice\", password: \"****123\" }",
+            "secret" => "****"
+        );
+    }
+
+    #[test]
+    fn test_assert_debug_snap_with_multiple_redaction_rules() {
+        #[derive(Debug)]
+        struct Config {
+            api_key: String,
+            password: String,
+            debug: bool,
+        }
+        let config = Config {
+            api_key: "abc123".into(),
+            password: "xyz789".into(),
+            debug: true,
+        };
+        assert_debug_snap!(
+            config,
+            Config {
+                api_key: "****".into(),
+                password: "****".into(),
+                debug: true,
+            },
+            "abc123" => "****",
+            "xyz789" => "****"
+        );
+    }
+
+    #[test]
+    fn test_assert_debug_snap_with_limit() {
+        assert_debug_snap!(
+            vec!["secret", "secret", "secret"],
+            vec!["****", "secret", "secret"],
+            [1] "secret" => "****"
+        );
+    }
+
+    #[test]
+    fn test_assert_debug_snap_complex_struct_with_redaction() {
+        #[derive(Debug)]
+        struct User {
+            id: u64,
+            email: String,
+            token: String,
+        }
+        let user = User {
+            id: 1,
+            email: "user@example.com".into(),
+            token: "Bearer abc.def.ghi".into(),
+        };
+        assert_debug_snap!(
+            user,
+            User {
+                id: 1,
+                email: "user@example.com".into(),
+                token: "Bearer ****".into(),
+            },
+            r"Bearer [A-Za-z0-9._-]+" => "Bearer ****"
+        );
+    }
+
+    #[test]
+    fn test_assert_debug_snap_map() {
+        use std::collections::HashMap;
+        let mut map = HashMap::new();
+        map.insert("key1", "value1");
+        map.insert("key2", "secret");
+        let mut expected = HashMap::new();
+        expected.insert("key1", "value1");
+        expected.insert("key2", "****");
+        assert_debug_snap!(
+            map,
+            expected,
+            "secret" => "****"
+        );
+    }
+
+    #[test]
+    fn test_assert_debug_snap_format_args() {
+        let name = "Bob";
+        let score = 95;
+        assert_debug_snap!(
+            format!("Player: {}, Score: {}", name, score),
+            "Player: Bob, Score: 95"
         );
     }
 }
