@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.2](https://github.com/Atliac/assert-snap/compare/v0.0.1...v0.0.2) - 2026-09-15
+
+### Other
+
+- Add mdBook tutorial and workflow configs ([#6](https://github.com/Atliac/assert-snap/pull/6))
+
 ## [0.0.1](https://github.com/Atliac/assert-snap/compare/v0.0.0...v0.0.1) - 2026-07-31
 
 ### Other
