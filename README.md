@@ -5,6 +5,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE-APACHE)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE-MIT)
 ![Maintenance: Active](https://img.shields.io/badge/Maintenance-Active-blue)
+[![Docs: Tutorial](https://img.shields.io/badge/Docs-Tutorial-blue)](https://books.atliac.com/assert-snap)
 
 A snapshot testing and assertion library for Rust that supports flexible, regex-based dynamic data redactions and detailed unified diff output.
 
