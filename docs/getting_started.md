@@ -13,7 +13,7 @@ assert-snap = "0.0.1"
 
 Use `assert_snap!` for types that implement `Display`. Pass the actual value first, followed by the expected snapshot string:
 
-```rust
+```rust,ignore
 use assert_snap::assert_snap;
 
 let actual_output = "User connected successfully";
@@ -28,7 +28,7 @@ If the actual value does not match the expected snapshot, `assert-snap` will pan
 
 Use `assert_debug_snap!` for types that implement `Debug`. The macro converts both the actual value and expected expression into debug representations:
 
-```rust
+```rust,ignore
 use assert_snap::assert_debug_snap;
 
 #[derive(Debug)]

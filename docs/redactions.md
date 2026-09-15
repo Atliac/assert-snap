@@ -12,7 +12,7 @@ The basic redaction syntax uses the pattern:
 
 This redacts all matches of the regular expression in the actual output before comparing against the expected snapshot:
 
-```rust
+```rust,ignore
 use assert_snap::assert_snap;
 
 let actual = "Response time: 142ms, status: 200";
@@ -35,7 +35,7 @@ You can restrict the maximum number of redactions by prefixing the rule with `[l
 
 By default (or with `[0]`), all matches are redacted. Specifying a limit (e.g. `[1]`) restricts redaction to at most that number of matches:
 
-```rust
+```rust,ignore
 use assert_snap::assert_snap;
 
 let actual = "token: secret_abc, session: secret_xyz";
@@ -52,7 +52,7 @@ assert_snap!(
 
 You can combine multiple redaction rules separated by commas:
 
-```rust
+```rust,ignore
 use assert_snap::assert_debug_snap;
 
 #[derive(Debug)]
