@@ -306,3 +306,18 @@ fn test_assert_debug_snap_trailing_comma_with_rule() {
         "secret" => "****",
     );
 }
+
+// ===== Non-printable / invisible character tests =====
+
+#[test]
+fn test_assert_snap_matching_with_invisible_characters() {
+    let response = "status for auth-api\0\0\0: 200 OK";
+    assert_snap!(response, "status for auth-api\0\0\0: 200 OK");
+}
+
+#[test]
+#[should_panic]
+fn test_assert_snap_failing_with_invisible_null_bytes() {
+    let response = "status for auth-api\0\0\0: 200 OK";
+    assert_snap!(response, "status for auth-api: 200 OK");
+}

@@ -27,6 +27,8 @@
 pub mod assert_impl;
 #[doc(hidden)]
 pub mod redaction;
+#[doc(hidden)]
+pub mod theme;
 
 /// Asserts any types implementing [`Display`](std::fmt::Display).
 ///

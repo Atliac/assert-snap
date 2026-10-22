@@ -16,6 +16,7 @@ A snapshot testing and assertion library for Rust that supports flexible, regex-
 - 🔍 **`assert_debug_snap!`**: Assert any types implementing `Debug`.
 - 🛡️ **Regex Redactions**: Inline rules to scrub volatile data (timestamps, UUIDs, secret tokens, memory addresses) before checking assertions.
 - 📊 **Unified Diff**: Built-in diff printing powered by `similar` on assertion failures (enabled via the `diff` feature, default ON).
+- 🎨 **Colored Output**: Clear, colored diffs and status cues (disable anytime with `NO_COLOR=1`).
 
 ---
 
@@ -126,6 +127,18 @@ assert_debug_snap!(
     r"sess-\d+" => "sess-****",
     r"Bearer .+" => "Bearer ****"
 );
+```
+
+---
+
+## 🎨 Terminal Colors
+
+Diffs and assertions are styled with terminal colors for quick visual scanning.
+
+To disable colors (for example, in CI pipelines or plain text log files):
+
+```bash
+NO_COLOR=1 cargo test
 ```
 
 ---
