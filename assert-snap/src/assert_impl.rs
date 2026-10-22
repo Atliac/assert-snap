@@ -45,24 +45,28 @@ pub(crate) fn escape_invisible(s: &str) -> Cow<'_, str> {
 ///
 #[track_caller]
 pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRule]) {
-    let fence = "============================";
-    println!("{fence}");
-    println!("======= ACTUAL VALUE =======");
-    println!("{actual}\n", actual = escape_invisible(actual));
+    let caller = std::panic::Location::caller();
+    println!(
+        "📸 assert-snap ...\n📄 {}:{}\n",
+        caller.file(),
+        caller.line()
+    );
+    println!("🔍 ACTUAL VALUE");
+    println!("{}\n", escape_invisible(actual));
     let actual = apply_redactions(actual, redaction_rules);
     if matches!(actual, Cow::Owned(_)) {
-        println!("====== REDACTED VALUE ======");
-        println!("{actual}\n", actual = escape_invisible(&actual));
+        println!("🛡️ REDACTED VALUE");
+        println!("{}\n", escape_invisible(&actual));
     }
     if expected != actual {
         let expected = &escape_invisible(expected);
-        println!("====== EXPECTED VALUE ======");
+        println!("🎯 EXPECTED VALUE");
         println!("{expected}\n");
         #[cfg(feature = "diff")]
-        show_diff(&actual, expected);
-        panic!("===== ASSERTION Failed =====\n{fence}\n");
+        show_diff(&escape_invisible(&actual), expected);
+        panic!("❌ ASSERTION FAILED\n");
     }
-    println!("===== ASSERTION PASSED =====\n{fence}\n");
+    println!("✅ ASSERTION PASSED\n");
 }
 
 /// Displays a unified diff between the expected snapshot string and the actual/redacted output.
@@ -73,7 +77,7 @@ pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRul
 fn show_diff(actual: &str, expected: &str) {
     use similar::TextDiff;
 
-    println!("===== DIFF =====");
+    println!("📊 DIFF");
     let diff = TextDiff::from_lines(expected, actual);
     println!(
         "{}",

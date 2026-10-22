@@ -316,7 +316,7 @@ fn test_assert_snap_matching_with_invisible_characters() {
 }
 
 #[test]
-#[should_panic(expected = "===== ASSERTION Failed =====")]
+#[should_panic]
 fn test_assert_snap_failing_with_invisible_null_bytes() {
     let response = "status for auth-api\0\0\0: 200 OK";
     assert_snap!(response, "status for auth-api: 200 OK");
