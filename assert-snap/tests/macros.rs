@@ -211,6 +211,24 @@ fn test_assert_debug_snap_format_args() {
 // ===== Macro hygiene tests =====
 
 #[test]
+fn test_macro_hygiene_variable_named_redaction_rules_in_replacement() {
+    let redaction_rules = "****";
+    assert_snap!("secret", "****", "secret" => redaction_rules);
+}
+
+#[test]
+fn test_macro_hygiene_variable_named_redaction_rules_in_pattern() {
+    let redaction_rules = "secret";
+    assert_snap!("secret", "****", redaction_rules => "****");
+}
+
+#[test]
+fn test_macro_hygiene_variable_named_redaction_rules_in_limit() {
+    let redaction_rules = 1;
+    assert_snap!("secret secret", "**** secret", [redaction_rules] "secret" => "****");
+}
+
+#[test]
 fn test_macro_hygiene_assert_snap_expected_named_actual() {
     let actual = "MATCHING_VALUE";
     assert_snap!("MATCHING_VALUE", actual);
