@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "assert-snap"
-version = "0.0.3"
+version = "1.0.0"
 dependencies = [
  "regex",
  "similar",

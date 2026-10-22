@@ -23,7 +23,9 @@
 //! assert_debug_snap!(Some("secret"), Some("secret"));
 //! ```
 
+#[doc(hidden)]
 pub mod assert_impl;
+#[doc(hidden)]
 pub mod redaction;
 
 /// Asserts any types implementing [`Display`](std::fmt::Display).
