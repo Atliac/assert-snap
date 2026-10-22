@@ -78,7 +78,7 @@ pub mod redaction;
 /// ```
 #[macro_export]
 macro_rules! assert_snap {
-    ($actual:expr, $expected:expr) => {
+    ($actual:expr, $expected:expr $(,)?) => {
         match (&($actual), &($expected)) {
             (actual_val, expected_val) => {
                 let actual_str = format!("{actual_val}");
@@ -137,17 +137,17 @@ macro_rules! assert_snap {
     (@munch $vec:ident;) => {};
 
     // Rule WITH limit (followed by a comma and more rules)
-    (@munch $vec:ident; [$limit:expr] $pattern:expr => $replacement:expr , $($rest:tt)*) => {
+    (@munch $vec:ident; [$limit:expr] $pattern:expr => $replacement:expr , $($rest:tt)+) => {
         $vec.push($crate::redaction::RedactionRule {
             pattern: $pattern,
             limit: $limit,
             replacement: $replacement,
         });
-        $crate::assert_snap!(@munch $vec; $($rest)*);
+        $crate::assert_snap!(@munch $vec; $($rest)+);
     };
 
     // Rule WITH limit (last rule)
-    (@munch $vec:ident; [$limit:expr] $pattern:expr => $replacement:expr) => {
+    (@munch $vec:ident; [$limit:expr] $pattern:expr => $replacement:expr $(,)?) => {
         $vec.push($crate::redaction::RedactionRule {
             pattern: $pattern,
             limit: $limit,
@@ -156,17 +156,17 @@ macro_rules! assert_snap {
     };
 
     // Rule WITHOUT limit (followed by a comma and more rules)
-    (@munch $vec:ident; $pattern:expr => $replacement:expr , $($rest:tt)*) => {
+    (@munch $vec:ident; $pattern:expr => $replacement:expr , $($rest:tt)+) => {
         $vec.push($crate::redaction::RedactionRule {
             pattern: $pattern,
             limit: 0,
             replacement: $replacement,
         });
-        $crate::assert_snap!(@munch $vec; $($rest)*);
+        $crate::assert_snap!(@munch $vec; $($rest)+);
     };
 
     // Rule WITHOUT limit (last rule)
-    (@munch $vec:ident; $pattern:expr => $replacement:expr) => {
+    (@munch $vec:ident; $pattern:expr => $replacement:expr $(,)?) => {
         $vec.push($crate::redaction::RedactionRule {
             pattern: $pattern,
             limit: 0,
@@ -219,7 +219,7 @@ macro_rules! assert_snap {
 /// ```
 #[macro_export]
 macro_rules! assert_debug_snap {
-    ($actual:expr, $expected:expr) => {
+    ($actual:expr, $expected:expr $(,)?) => {
         match (&($actual), &($expected)) {
             (actual_val, expected_val) => {
                 let actual_str = format!("{actual_val:#?}");
@@ -479,5 +479,54 @@ mod tests {
         assert_debug_snap!(100, 100);
         assert_eq!(actual, 42);
         assert_eq!(expected, 99);
+    }
+
+    // ===== Trailing comma tests =====
+
+    #[test]
+    fn test_assert_snap_trailing_comma_basic() {
+        assert_snap!("hello", "hello",);
+    }
+
+    #[test]
+    fn test_assert_snap_trailing_comma_with_rule() {
+        assert_snap!(
+            "secret",
+            "****",
+            "secret" => "****",
+        );
+    }
+
+    #[test]
+    fn test_assert_snap_trailing_comma_with_limit_rule() {
+        assert_snap!(
+            "secret secret",
+            "**** secret",
+            [1] "secret" => "****",
+        );
+    }
+
+    #[test]
+    fn test_assert_snap_trailing_comma_multiple_rules() {
+        assert_snap!(
+            "secret 123",
+            "**** [NUM]",
+            "secret" => "****",
+            r"\d+" => "[NUM]",
+        );
+    }
+
+    #[test]
+    fn test_assert_debug_snap_trailing_comma_basic() {
+        assert_debug_snap!(Some(42), Some(42),);
+    }
+
+    #[test]
+    fn test_assert_debug_snap_trailing_comma_with_rule() {
+        assert_debug_snap!(
+            Some("secret"),
+            Some("****"),
+            "secret" => "****",
+        );
     }
 }
