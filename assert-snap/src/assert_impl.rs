@@ -4,6 +4,27 @@ use std::borrow::Cow;
 
 use crate::redaction::{RedactionRule, apply_redactions};
 
+/// Escapes non-printable control characters (such as `\0`, `\r`, `\x1b`) using
+/// their debug representations, while preserving structural newlines (`\n`) and tabs (`\t`).
+///
+pub(crate) fn escape_invisible(s: &str) -> Cow<'_, str> {
+    if !s.chars().any(|c| c.is_control() && c != '\n' && c != '\t') {
+        return Cow::Borrowed(s);
+    }
+
+    let mut result = String::with_capacity(s.len());
+    for c in s.chars() {
+        if c.is_control() && c != '\n' && c != '\t' {
+            for escaped in c.escape_debug() {
+                result.push(escaped);
+            }
+        } else {
+            result.push(c);
+        }
+    }
+    Cow::Owned(result)
+}
+
 /// Asserts that an actual value matches an expected snapshot value after applying redaction rules.
 ///
 /// This function compares `actual` against `expected` after applying the provided
@@ -24,22 +45,24 @@ use crate::redaction::{RedactionRule, apply_redactions};
 ///
 #[track_caller]
 pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRule]) {
-    println!("===== ACTUAL VALUE =====");
-    println!("{actual}\n");
+    let fence = "============================";
+    println!("{fence}");
+    println!("======= ACTUAL VALUE =======");
+    println!("{actual}\n", actual = escape_invisible(actual));
     let actual = apply_redactions(actual, redaction_rules);
     if matches!(actual, Cow::Owned(_)) {
-        println!("===== REDACTED VALUE =====");
-        println!("{actual}\n");
+        println!("====== REDACTED VALUE ======");
+        println!("{actual}\n", actual = escape_invisible(&actual));
     }
-
     if expected != actual {
-        println!("===== EXPECTED VALUE =====");
+        let expected = &escape_invisible(expected);
+        println!("====== EXPECTED VALUE ======");
         println!("{expected}\n");
         #[cfg(feature = "diff")]
         show_diff(&actual, expected);
-        panic!("===== ASSERTION Failed =====");
+        panic!("===== ASSERTION Failed =====\n{fence}\n");
     }
-    println!("===== ASSERTION PASSED =====");
+    println!("===== ASSERTION PASSED =====\n{fence}\n");
 }
 
 /// Displays a unified diff between the expected snapshot string and the actual/redacted output.
