@@ -3,7 +3,6 @@
 # ==============================================================================
 /target/
 /debug/
-/book/
 
 # Rustfmt backup files and compiler crash dumps
 **/*.rs.bk
