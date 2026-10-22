@@ -79,15 +79,23 @@ pub mod redaction;
 #[macro_export]
 macro_rules! assert_snap {
     ($actual:expr, $expected:expr) => {
-        let actual = format!("{}", $actual);
-        let expected = format!("{}", $expected);
-        $crate::assert_snap!(@assert_str, &actual, &expected);
+        match (&($actual), &($expected)) {
+            (actual_val, expected_val) => {
+                let actual_str = format!("{actual_val}");
+                let expected_str = format!("{expected_val}");
+                $crate::assert_snap!(@assert_str, &actual_str, &expected_str);
+            }
+        }
     };
 
-    ($actual:expr, $expected:expr,$($tail:tt)+) => {
-        let actual = format!("{}", $actual);
-        let expected = format!("{}", $expected);
-        $crate::assert_snap!(@assert_str, &actual, &expected, $($tail)+);
+    ($actual:expr, $expected:expr, $($tail:tt)+) => {
+        match (&($actual), &($expected)) {
+            (actual_val, expected_val) => {
+                let actual_str = format!("{actual_val}");
+                let expected_str = format!("{expected_val}");
+                $crate::assert_snap!(@assert_str, &actual_str, &expected_str, $($tail)+);
+            }
+        }
     };
 
     (
@@ -122,7 +130,7 @@ macro_rules! assert_snap {
         $crate::assert_impl::assert_snap(
             $actual,
             $expected,
-            Default::default()
+            ::std::default::Default::default()
         );
     };
 
@@ -212,15 +220,23 @@ macro_rules! assert_snap {
 #[macro_export]
 macro_rules! assert_debug_snap {
     ($actual:expr, $expected:expr) => {
-        let actual = format!("{:#?}", $actual);
-        let expected = format!("{:#?}", $expected);
-        $crate::assert_snap!(@assert_str, &actual, &expected);
+        match (&($actual), &($expected)) {
+            (actual_val, expected_val) => {
+                let actual_str = format!("{actual_val:#?}");
+                let expected_str = format!("{expected_val:#?}");
+                $crate::assert_snap!(@assert_str, &actual_str, &expected_str);
+            }
+        }
     };
 
-    ($actual:expr, $expected:expr,$($tail:tt)+) => {
-        let actual = format!("{:#?}", $actual);
-        let expected = format!("{:#?}", $expected);
-        $crate::assert_snap!(@assert_str, &actual, &expected, $($tail)+);
+    ($actual:expr, $expected:expr, $($tail:tt)+) => {
+        match (&($actual), &($expected)) {
+            (actual_val, expected_val) => {
+                let actual_str = format!("{actual_val:#?}");
+                let expected_str = format!("{expected_val:#?}");
+                $crate::assert_snap!(@assert_str, &actual_str, &expected_str, $($tail)+);
+            }
+        }
     };
 }
 
@@ -431,5 +447,37 @@ mod tests {
             format!("Player: {}, Score: {}", name, score),
             "Player: Bob, Score: 95"
         );
+    }
+
+    // ===== Macro hygiene tests =====
+
+    #[test]
+    fn test_macro_hygiene_assert_snap_expected_named_actual() {
+        let actual = "MATCHING_VALUE";
+        assert_snap!("MATCHING_VALUE", actual);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_macro_hygiene_assert_snap_silent_false_positive_prevention() {
+        let actual = "WRONG_VALUE";
+        assert_snap!("EXPECTED_VALUE", actual);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_macro_hygiene_assert_debug_snap_silent_false_positive_prevention() {
+        let actual = "WRONG_VALUE";
+        assert_debug_snap!("EXPECTED_VALUE", actual);
+    }
+
+    #[test]
+    fn test_macro_hygiene_no_scope_pollution() {
+        let actual = 42;
+        let expected = 99;
+        assert_snap!("hello", "hello");
+        assert_debug_snap!(100, 100);
+        assert_eq!(actual, 42);
+        assert_eq!(expected, 99);
     }
 }
