@@ -89,7 +89,18 @@ fn show_diff(actual: &str, expected: &str, theme: &Theme) {
                 ChangeTag::Insert => ("+", theme.diff_ins),
                 ChangeTag::Equal => (" ", theme.diff_equal),
             };
-            print!("{style}{sign}{change}{style:#}");
+            let change = change.as_str().unwrap_or_default();
+            let mut change_escaped = String::with_capacity(change.len());
+            for c in change.chars() {
+                if '\\' == c || '\n' == c || '"' == c {
+                    change_escaped.push(c);
+                } else {
+                    for ce in c.escape_debug() {
+                        change_escaped.push(ce);
+                    }
+                }
+            }
+            print!("{style}{sign}{change_escaped}{style:#}");
         }
     }
 }
