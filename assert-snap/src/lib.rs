@@ -87,7 +87,7 @@ macro_rules! assert_snap {
             (actual_val, expected_val) => {
                 let actual_str = format!("{actual_val}");
                 let expected_str = format!("{expected_val}");
-                $crate::assert_snap!(@assert_str, &actual_str, &expected_str);
+                $crate::assert_snap!(@assert_str, stringify!(assert_snap($actual)), &actual_str, &expected_str);
             }
         }
     };
@@ -97,13 +97,14 @@ macro_rules! assert_snap {
             (actual_val, expected_val) => {
                 let actual_str = format!("{actual_val}");
                 let expected_str = format!("{expected_val}");
-                $crate::assert_snap!(@assert_str, &actual_str, &expected_str, $($tail)+);
+                $crate::assert_snap!(@assert_str, stringify!(assert_snap($actual)), &actual_str, &expected_str, $($tail)+);
             }
         }
     };
 
     (
         @assert_str,
+        $method:expr,
         // &str
         $actual:expr,
         // &str
@@ -118,6 +119,7 @@ macro_rules! assert_snap {
         }
 
         $crate::assert_impl::assert_snap(
+            $method,
             $actual,
             $expected,
             &redaction_rules
@@ -126,12 +128,14 @@ macro_rules! assert_snap {
 
     (
         @assert_str,
+        $method:expr,
         // &str
         $actual:expr,
         // &str
         $expected:expr
     ) => {
         $crate::assert_impl::assert_snap(
+            $method,
             $actual,
             $expected,
             ::std::default::Default::default()
@@ -228,7 +232,7 @@ macro_rules! assert_debug_snap {
             (actual_val, expected_val) => {
                 let actual_str = format!("{actual_val:#?}");
                 let expected_str = format!("{expected_val:#?}");
-                $crate::assert_snap!(@assert_str, &actual_str, &expected_str);
+                $crate::assert_snap!(@assert_str, stringify!(assert_debug_snap($actual)), &actual_str, &expected_str);
             }
         }
     };
@@ -238,7 +242,7 @@ macro_rules! assert_debug_snap {
             (actual_val, expected_val) => {
                 let actual_str = format!("{actual_val:#?}");
                 let expected_str = format!("{expected_val:#?}");
-                $crate::assert_snap!(@assert_str, &actual_str, &expected_str, $($tail)+);
+                $crate::assert_snap!(@assert_str, stringify!(assert_debug_snap($actual)), &actual_str, &expected_str, $($tail)+);
             }
         }
     };

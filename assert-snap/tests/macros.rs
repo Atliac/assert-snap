@@ -199,6 +199,18 @@ fn test_assert_debug_snap_map() {
 }
 
 #[test]
+#[should_panic]
+fn test_assert_debug_snap_map_2() {
+    let mut map = BTreeMap::new();
+    map.insert("key1", "value1");
+    map.insert("key2", "secret");
+    let mut expected = BTreeMap::new();
+    expected.insert("key1", "value1");
+    expected.insert("key2", "****");
+    assert_debug_snap!(map, expected,);
+}
+
+#[test]
 fn test_assert_debug_snap_format_args() {
     let name = "Bob";
     let score = 95;
@@ -320,4 +332,20 @@ fn test_assert_snap_matching_with_invisible_characters() {
 fn test_assert_snap_failing_with_invisible_null_bytes() {
     let response = "status for auth-api\0\0\0: 200 OK";
     assert_snap!(response, "status for auth-api: 200 OK");
+}
+
+#[test]
+#[should_panic]
+fn test_assert_snap_failing_with_trailing_newlines() {
+    let actual = "\"line 1\"\nline 2!";
+    let expected = "\"line 1\"\nline 2!\n";
+    assert_snap!(actual, expected);
+}
+
+#[test]
+#[should_panic]
+fn test_debug_assert_snap_failing_with_trailing_newlines() {
+    let actual = "line 1\nline 2!";
+    let expected = "line 1\nline 2!\n\n";
+    assert_debug_snap!(actual, expected);
 }

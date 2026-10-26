@@ -5,27 +5,6 @@ use std::borrow::Cow;
 use crate::redaction::{RedactionRule, apply_redactions};
 use crate::theme::Theme;
 
-/// Escapes non-printable control characters (such as `\0`, `\r`, `\x1b`) using
-/// their debug representations, while preserving structural newlines (`\n`) and tabs (`\t`).
-///
-pub(crate) fn escape_invisible(s: &str) -> Cow<'_, str> {
-    if !s.chars().any(|c| c.is_control() && c != '\n' && c != '\t') {
-        return Cow::Borrowed(s);
-    }
-
-    let mut result = String::with_capacity(s.len());
-    for c in s.chars() {
-        if c.is_control() && c != '\n' && c != '\t' {
-            for escaped in c.escape_debug() {
-                result.push(escaped);
-            }
-        } else {
-            result.push(c);
-        }
-    }
-    Cow::Owned(result)
-}
-
 /// Asserts that an actual value matches an expected snapshot value after applying redaction rules.
 ///
 /// This function compares `actual` against `expected` after applying the provided
@@ -34,6 +13,7 @@ pub(crate) fn escape_invisible(s: &str) -> Cow<'_, str> {
 ///
 /// # Arguments
 ///
+/// * `method` - The assertion method name displayed in diagnostic output.
 /// * `actual` - The actual value produced by the code under test.
 /// * `expected` - The expected snapshot value to compare against.
 /// * `redaction_rules` - A slice of redaction rules to apply to `actual` before comparison.
@@ -45,11 +25,11 @@ pub(crate) fn escape_invisible(s: &str) -> Cow<'_, str> {
 /// is enabled, a unified diff is printed showing the differences.
 ///
 #[track_caller]
-pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRule]) {
+pub fn assert_snap(method: &str, actual: &str, expected: &str, redaction_rules: &[RedactionRule]) {
     let theme = Theme::current();
     let caller = std::panic::Location::caller();
     println!(
-        "{brand}📸 assert-snap ...{brand:#}\n📄 {loc}{}:{}{loc:#}\n",
+        "{brand}📸 {method}:\n{brand:#}📄 {loc}{}:{}{loc:#}\n",
         caller.file(),
         caller.line(),
         brand = theme.brand,
@@ -59,24 +39,23 @@ pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRul
         "{style}🔍 ACTUAL VALUE{style:#}",
         style = theme.actual_header
     );
-    println!("{}\n", escape_invisible(actual));
+    println!("{}\n", actual);
     let actual = apply_redactions(actual, redaction_rules);
     if matches!(actual, Cow::Owned(_)) {
         println!(
             "{style}🛡️ REDACTED VALUE{style:#}",
             style = theme.redacted_header
         );
-        println!("{}\n", escape_invisible(&actual));
+        println!("{}\n", actual);
     }
     if expected != actual {
-        let expected = &escape_invisible(expected);
         println!(
             "{style}🎯 EXPECTED VALUE{style:#}",
             style = theme.expected_header
         );
         println!("{expected}\n");
         #[cfg(feature = "diff")]
-        show_diff(&escape_invisible(&actual), expected, &theme);
+        show_diff(&actual, expected, &theme);
         panic!("{style}❌ ASSERTION FAILED{style:#}\n", style = theme.fail);
     }
     println!("{style}✅ ASSERTION PASSED{style:#}\n", style = theme.pass);
@@ -89,7 +68,8 @@ pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRul
 #[track_caller]
 fn show_diff(actual: &str, expected: &str, theme: &Theme) {
     use similar::{ChangeTag, TextDiff};
-
+    let actual = format!("{actual}\n");
+    let expected = format!("{expected}\n");
     println!("{style}📊 DIFF{style:#}", style = theme.diff_header);
     let diff = TextDiff::from_lines(expected, actual);
     println!(
@@ -110,19 +90,18 @@ fn show_diff(actual: &str, expected: &str, theme: &Theme) {
                 ChangeTag::Insert => ("+", theme.diff_ins),
                 ChangeTag::Equal => (" ", theme.diff_equal),
             };
-            print!("{style}{sign}{change}{style:#}");
+            let change = change.as_str().unwrap_or_default();
+            let mut change_escaped = String::with_capacity(change.len());
+            for c in change.chars() {
+                if '\\' == c || '\n' == c || '"' == c {
+                    change_escaped.push(c);
+                } else {
+                    for ce in c.escape_debug() {
+                        change_escaped.push(ce);
+                    }
+                }
+            }
+            print!("{style}{sign}{change_escaped}{style:#}");
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_assert_impl() {
-        let real = "User(id=123, name=Alice)";
-        let expected = "User(id=REDACTED, name=Alice)";
-        let rules = [RedactionRule::new(r"id=\d+", "id=REDACTED", 0)];
-        assert_snap(real, expected, &rules);
     }
 }
