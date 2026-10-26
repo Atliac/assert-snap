@@ -46,7 +46,7 @@ pub fn assert_snap(method: &str, actual: &str, expected: &str, redaction_rules: 
             "{style}🛡️ REDACTED VALUE{style:#}",
             style = theme.redacted_header
         );
-        println!("{}\n", &actual);
+        println!("{}\n", actual);
     }
     if expected != actual {
         println!(
