@@ -5,27 +5,6 @@ use std::borrow::Cow;
 use crate::redaction::{RedactionRule, apply_redactions};
 use crate::theme::Theme;
 
-/// Escapes non-printable control characters (such as `\0`, `\r`, `\x1b`) using
-/// their debug representations, while preserving structural newlines (`\n`) and tabs (`\t`).
-///
-pub(crate) fn escape_invisible(s: &str) -> Cow<'_, str> {
-    if !s.chars().any(|c| c.is_control() && c != '\n' && c != '\t') {
-        return Cow::Borrowed(s);
-    }
-
-    let mut result = String::with_capacity(s.len());
-    for c in s.chars() {
-        if c.is_control() && c != '\n' && c != '\t' {
-            for escaped in c.escape_debug() {
-                result.push(escaped);
-            }
-        } else {
-            result.push(c);
-        }
-    }
-    Cow::Owned(result)
-}
-
 /// Asserts that an actual value matches an expected snapshot value after applying redaction rules.
 ///
 /// This function compares `actual` against `expected` after applying the provided
@@ -59,24 +38,23 @@ pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRul
         "{style}🔍 ACTUAL VALUE{style:#}",
         style = theme.actual_header
     );
-    println!("{}\n", escape_invisible(actual));
+    println!("{}\n", actual);
     let actual = apply_redactions(actual, redaction_rules);
     if matches!(actual, Cow::Owned(_)) {
         println!(
             "{style}🛡️ REDACTED VALUE{style:#}",
             style = theme.redacted_header
         );
-        println!("{}\n", escape_invisible(&actual));
+        println!("{}\n", &actual);
     }
     if expected != actual {
-        let expected = &escape_invisible(expected);
         println!(
             "{style}🎯 EXPECTED VALUE{style:#}",
             style = theme.expected_header
         );
         println!("{expected}\n");
         #[cfg(feature = "diff")]
-        show_diff(&escape_invisible(&actual), expected, &theme);
+        show_diff(&actual, expected, &theme);
         panic!("{style}❌ ASSERTION FAILED{style:#}\n", style = theme.fail);
     }
     println!("{style}✅ ASSERTION PASSED{style:#}\n", style = theme.pass);

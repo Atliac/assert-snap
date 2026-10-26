@@ -321,3 +321,11 @@ fn test_assert_snap_failing_with_invisible_null_bytes() {
     let response = "status for auth-api\0\0\0: 200 OK";
     assert_snap!(response, "status for auth-api: 200 OK");
 }
+
+#[test]
+#[should_panic]
+fn test_assert_snap_failing_with_trailing_newlines() {
+    let actual = "line 1\nline 2!";
+    let expected = "line 1\nline 2!\n\n";
+    assert_snap!(actual, expected);
+}
