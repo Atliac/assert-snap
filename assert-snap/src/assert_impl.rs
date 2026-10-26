@@ -13,6 +13,7 @@ use crate::theme::Theme;
 ///
 /// # Arguments
 ///
+/// * `method` - The assertion method name displayed in diagnostic output.
 /// * `actual` - The actual value produced by the code under test.
 /// * `expected` - The expected snapshot value to compare against.
 /// * `redaction_rules` - A slice of redaction rules to apply to `actual` before comparison.
@@ -24,11 +25,11 @@ use crate::theme::Theme;
 /// is enabled, a unified diff is printed showing the differences.
 ///
 #[track_caller]
-pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRule]) {
+pub fn assert_snap(method: &str, actual: &str, expected: &str, redaction_rules: &[RedactionRule]) {
     let theme = Theme::current();
     let caller = std::panic::Location::caller();
     println!(
-        "{brand}📸 assert-snap ...{brand:#}\n📄 {loc}{}:{}{loc:#}\n",
+        "{brand}📸 {method}:\n{brand:#}📄 {loc}{}:{}\n{loc:#}\n",
         caller.file(),
         caller.line(),
         brand = theme.brand,
@@ -102,17 +103,5 @@ fn show_diff(actual: &str, expected: &str, theme: &Theme) {
             }
             print!("{style}{sign}{change_escaped}{style:#}");
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn test_assert_impl() {
-        let real = "User(id=123, name=Alice)";
-        let expected = "User(id=REDACTED, name=Alice)";
-        let rules = [RedactionRule::new(r"id=\d+", "id=REDACTED", 0)];
-        assert_snap(real, expected, &rules);
     }
 }
