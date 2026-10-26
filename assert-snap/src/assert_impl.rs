@@ -29,7 +29,7 @@ pub fn assert_snap(method: &str, actual: &str, expected: &str, redaction_rules: 
     let theme = Theme::current();
     let caller = std::panic::Location::caller();
     println!(
-        "{brand}📸 {method}:\n{brand:#}📄 {loc}{}:{}\n{loc:#}\n",
+        "{brand}📸 {method}:\n{brand:#}📄 {loc}{}:{}{loc:#}\n",
         caller.file(),
         caller.line(),
         brand = theme.brand,
