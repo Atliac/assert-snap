@@ -67,7 +67,8 @@ pub fn assert_snap(actual: &str, expected: &str, redaction_rules: &[RedactionRul
 #[track_caller]
 fn show_diff(actual: &str, expected: &str, theme: &Theme) {
     use similar::{ChangeTag, TextDiff};
-
+    let actual = format!("{actual}\n");
+    let expected = format!("{expected}\n");
     println!("{style}📊 DIFF{style:#}", style = theme.diff_header);
     let diff = TextDiff::from_lines(expected, actual);
     println!(
